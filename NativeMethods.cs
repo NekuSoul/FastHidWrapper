@@ -1,12 +1,28 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+// ReSharper disable FieldCanBeMadeReadOnly.Global
+// ReSharper disable FieldCanBeMadeReadOnly.Local
 // ReSharper disable InconsistentNaming
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace FastHidWrapper
 {
 	internal static class NativeMethods
 	{
+		#region Constants
+
+		internal const int FileFlagOverlapped = 0x40000000;
+		internal const short FileShareRead = 0x1;
+		internal const short FileShareReadWrite = 0x3;
+		internal const int AccessNone = 0x0;
+		internal const short OpenExisting = 0x3;
+
+		#endregion
+
+		#region Enums
+
 		[Flags]
 		internal enum DiGetClassFlags
 		{
@@ -17,13 +33,17 @@ namespace FastHidWrapper
 			DIGCF_DEVICEINTERFACE = 0x10,
 		}
 
+		#endregion
+
+		#region Structs
+
 		[StructLayout(LayoutKind.Sequential)]
 		internal struct DeviceInfoData
 		{
-			int Size;
-			Guid ClassGuid;
-			int DeviceInstance;
-			IntPtr Reserved;
+			private int Size;
+			private Guid ClassGuid;
+			private int DeviceInstance;
+			private IntPtr Reserved;
 
 			public void Initialize()
 			{
@@ -37,10 +57,10 @@ namespace FastHidWrapper
 		[StructLayout(LayoutKind.Sequential)]
 		internal struct DeviceInterfaceData
 		{
-			int Size;
-			Guid InterfaceClassGuid;
-			int Flags;
-			IntPtr Reserved;
+			private int Size;
+			private Guid InterfaceClassGuid;
+			private int Flags;
+			private IntPtr Reserved;
 
 			public void Initialize()
 			{
@@ -48,15 +68,88 @@ namespace FastHidWrapper
 			}
 		}
 
-		[DllImport("setupapi.dll")]
-		public static extern bool SetupDiGetDeviceRegistryProperty(
+		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+		internal struct DeviceInterfaceDetailData
+		{
+			internal int Size;
+
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+			internal string DevicePath;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct HidAttributes
+		{
+			internal int Size;
+			internal ushort VendorID;
+			internal ushort ProductID;
+			internal short VersionNumber;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct HidCapabilities
+		{
+			internal short Usage;
+			internal short UsagePage;
+			internal short InputReportByteLength;
+			internal short OutputReportByteLength;
+			internal short FeatureReportByteLength;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
+			internal short[] Reserved;
+			internal short NumberLinkCollectionNodes;
+			internal short NumberInputButtonCaps;
+			internal short NumberInputValueCaps;
+			internal short NumberInputDataIndices;
+			internal short NumberOutputButtonCaps;
+			internal short NumberOutputValueCaps;
+			internal short NumberOutputDataIndices;
+			internal short NumberFeatureButtonCaps;
+			internal short NumberFeatureValueCaps;
+			internal short NumberFeatureDataIndices;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct SecurityAttributes
+		{
+			internal int Size;
+			internal IntPtr SecurityDescriptor;
+			internal bool InheritHandle;
+		}
+
+		#endregion
+
+		#region Methods
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		internal static extern IntPtr CreateFile(
+			string fileName,
+			uint desiredAccess,
+			int shareMode,
+			ref SecurityAttributes securityAttributes,
+			int creationDisposition,
+			int flagsAndAttributes,
+			int templateFile);
+
+		[DllImport("setupapi.dll", CharSet = CharSet.Auto, EntryPoint = "SetupDiGetDeviceInterfaceDetail")]
+		internal static extern bool SetupDiGetDeviceInterfaceDetailBuffer(
 			IntPtr deviceInfoSet,
-			ref DeviceInfoData deviceInfoData,
-			int propertyVal,
-			ref int propertyRegDataType,
-			byte[] propertyBuffer,
-			int propertyBufferSize,
-			ref int requiredSize);
+			ref DeviceInterfaceData deviceInterfaceData,
+			IntPtr deviceInterfaceDetailData,
+			int deviceInterfaceDetailDataSize,
+			ref int requiredSize,
+			IntPtr deviceInfoData);
+
+		[DllImport("setupapi.dll", CharSet = CharSet.Auto)]
+		internal static extern bool SetupDiGetDeviceInterfaceDetail(
+			IntPtr deviceInfoSet,
+			ref DeviceInterfaceData deviceInterfaceData,
+			ref DeviceInterfaceDetailData deviceInterfaceDetailData,
+			int deviceInterfaceDetailDataSize,
+			ref int requiredSize,
+			IntPtr deviceInfoData);
+
+		[DllImport("hid.dll")]
+		internal static extern bool HidD_GetAttributes(IntPtr hidDeviceObject, ref HidAttributes attributes);
 
 		[DllImport("hid.dll")]
 		internal static extern void HidD_GetHidGuid(ref Guid hidGuid);
@@ -84,5 +177,7 @@ namespace FastHidWrapper
 
 		[DllImport("setupapi.dll")]
 		internal static extern int SetupDiDestroyDeviceInfoList(IntPtr deviceInfoSet);
+
+		#endregion
 	}
 }

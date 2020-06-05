@@ -1,33 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using static FastHidWrapper.NativeMethods;
 
 namespace FastHidWrapper
 {
 	internal static class HidDeviceEnumerator
 	{
-		private static Guid hidGuid;
+		private static Guid _hidGuid;
 
 		static HidDeviceEnumerator()
 		{
-			HidD_GetHidGuid(ref hidGuid);
+			HidD_GetHidGuid(ref _hidGuid);
 		}
 
-		public static HidDevice GetDevice(int vendorId, int productId, ushort usagePage, ushort usage)
+		internal static IEnumerable<HidDevice> GetHidDevices()
 		{
 			var deviceInfoSet = SetupDiGetClassDevs(
-				ref hidGuid,
+				ref _hidGuid,
 				null,
 				0,
 				DiGetClassFlags.DIGCF_PRESENT | DiGetClassFlags.DIGCF_DEVICEINTERFACE);
 
 			var deviceInfos = EnumerateDeviceInfo(deviceInfoSet);
-			var deviceInterfaceInfos = deviceInfos.SelectMany(di => EnumerateDeviceInterfaces(deviceInfoSet, di));
-			
+
+			var deviceInterfaceInfos =
+				deviceInfos.SelectMany(deviceInfo => EnumerateDeviceInterfaces(deviceInfoSet, deviceInfo));
+
+			var paths = deviceInterfaceInfos.Select(
+				deviceInterfaceInfo => GetDevicePath(deviceInfoSet, deviceInterfaceInfo)).ToList();
+
 			SetupDiDestroyDeviceInfoList(deviceInfoSet);
 
-			return new HidDevice();
+			foreach (var path in paths)
+			{
+				yield return new HidDevice(path);
+			}
 		}
 
 		private static IEnumerable<DeviceInfoData> EnumerateDeviceInfo(IntPtr deviceInfoSet)
@@ -56,7 +65,7 @@ namespace FastHidWrapper
 			while (SetupDiEnumDeviceInterfaces(
 				deviceInfoSet,
 				ref deviceInfoData,
-				ref hidGuid,
+				ref _hidGuid,
 				interfaceIndex,
 				ref deviceInterfaceData))
 			{
@@ -64,6 +73,33 @@ namespace FastHidWrapper
 
 				interfaceIndex++;
 			}
+		}
+
+		private static string GetDevicePath(IntPtr deviceInfoSet, DeviceInterfaceData deviceInterfaceData)
+		{
+			var size = 0;
+			var interfaceDetailData = new DeviceInterfaceDetailData
+			{
+				Size = IntPtr.Size == 4 ? 4 + Marshal.SystemDefaultCharSize : 8
+			};
+
+			SetupDiGetDeviceInterfaceDetailBuffer(
+				deviceInfoSet,
+				ref deviceInterfaceData,
+				IntPtr.Zero, 
+				0,
+				ref size,
+				IntPtr.Zero);
+
+			var success = SetupDiGetDeviceInterfaceDetail(
+				deviceInfoSet,
+				ref deviceInterfaceData,
+				ref interfaceDetailData,
+				size,
+				ref size,
+				IntPtr.Zero);
+
+			return !success ? null : interfaceDetailData.DevicePath;
 		}
 	}
 }
