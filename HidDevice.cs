@@ -9,12 +9,12 @@ namespace FastHidWrapper
 	{
 		private HidAttributes _hidAttributes;
 		private HidCapabilities _hidCapabilities;
-		private IntPtr deviceObject;
+		private IntPtr _hidDeviceObject;
 
 		public int VendorId => _hidAttributes.VendorID;
 		public int ProductId => _hidAttributes.ProductID;
-		public short Usage => _hidCapabilities.Usage;
-		public short UsagePage => _hidCapabilities.UsagePage;
+		public ushort Usage => _hidCapabilities.Usage;
+		public ushort UsagePage => _hidCapabilities.UsagePage;
 
 		public string Path { get; }
 
@@ -22,8 +22,8 @@ namespace FastHidWrapper
 		{
 			Path = path;
 			OpenDevice();
-
-			// TODO: Implement Capabilities
+			QueryAttributes();
+			QueryCapabilities();
 		}
 
 		private void OpenDevice()
@@ -35,11 +35,33 @@ namespace FastHidWrapper
 			};
 			security.Size = Marshal.SizeOf(security);
 
-			deviceObject = CreateFile(Path, AccessNone, FileShareRead, ref security, OpenExisting, FileFlagOverlapped, 0);
+			_hidDeviceObject = CreateFile(
+				Path,
+				AccessNone,
+				FileShareRead,
+				ref security,
+				OpenExisting,
+				FileFlagOverlapped,
+				0);
+		}
 
+		private void QueryAttributes()
+		{
 			_hidAttributes = new HidAttributes();
 			_hidAttributes.Size = Marshal.SizeOf(_hidAttributes);
-			HidD_GetAttributes(deviceObject, ref _hidAttributes);
+			HidD_GetAttributes(_hidDeviceObject, ref _hidAttributes);
+		}
+
+		private void QueryCapabilities()
+		{
+			_hidCapabilities = new HidCapabilities();
+			var capabilitiyPointer = new IntPtr();
+
+			if (!HidD_GetPreparsedData(_hidDeviceObject, ref capabilitiyPointer))
+				return;
+
+			HidP_GetCaps(capabilitiyPointer, ref _hidCapabilities);
+			HidD_FreePreparsedData(capabilitiyPointer);
 		}
 
 		public static HidDevice GetDevice(int vendorId, int productId, ushort usagePage, ushort usage)

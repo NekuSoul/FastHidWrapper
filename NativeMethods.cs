@@ -59,7 +59,7 @@ namespace FastHidWrapper
 		{
 			private int Size;
 			private Guid InterfaceClassGuid;
-			private int Flags;
+			private uint Flags;
 			private IntPtr Reserved;
 
 			public void Initialize()
@@ -89,23 +89,25 @@ namespace FastHidWrapper
 		[StructLayout(LayoutKind.Sequential)]
 		internal struct HidCapabilities
 		{
-			internal short Usage;
-			internal short UsagePage;
-			internal short InputReportByteLength;
-			internal short OutputReportByteLength;
-			internal short FeatureReportByteLength;
+			internal ushort Usage;
+			internal ushort UsagePage;
+			internal ushort InputReportByteLength;
+			internal ushort OutputReportByteLength;
+			internal ushort FeatureReportByteLength;
+
 			[MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
-			internal short[] Reserved;
-			internal short NumberLinkCollectionNodes;
-			internal short NumberInputButtonCaps;
-			internal short NumberInputValueCaps;
-			internal short NumberInputDataIndices;
-			internal short NumberOutputButtonCaps;
-			internal short NumberOutputValueCaps;
-			internal short NumberOutputDataIndices;
-			internal short NumberFeatureButtonCaps;
-			internal short NumberFeatureValueCaps;
-			internal short NumberFeatureDataIndices;
+			internal ushort[] Reserved;
+
+			internal ushort NumberLinkCollectionNodes;
+			internal ushort NumberInputButtonCaps;
+			internal ushort NumberInputValueCaps;
+			internal ushort NumberInputDataIndices;
+			internal ushort NumberOutputButtonCaps;
+			internal ushort NumberOutputValueCaps;
+			internal ushort NumberOutputDataIndices;
+			internal ushort NumberFeatureButtonCaps;
+			internal ushort NumberFeatureValueCaps;
+			internal ushort NumberFeatureDataIndices;
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
@@ -120,6 +122,27 @@ namespace FastHidWrapper
 
 		#region Methods
 
+		#region hid.dll
+
+		[DllImport("hid.dll")]
+		internal static extern bool HidD_FreePreparsedData(IntPtr preparsedData);
+
+		[DllImport("hid.dll")]
+		internal static extern bool HidD_GetAttributes(IntPtr hidDeviceObject, ref HidAttributes attributes);
+
+		[DllImport("hid.dll")]
+		internal static extern int HidP_GetCaps(IntPtr preparsedData, ref HidCapabilities capabilities);
+
+		[DllImport("hid.dll")]
+		internal static extern void HidD_GetHidGuid(ref Guid hidGuid);
+
+		[DllImport("hid.dll")]
+		internal static extern bool HidD_GetPreparsedData(IntPtr hidDeviceObject, ref IntPtr preparsedData);
+
+		#endregion
+
+		#region kernel32.dll
+
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
 		internal static extern IntPtr CreateFile(
 			string fileName,
@@ -129,6 +152,10 @@ namespace FastHidWrapper
 			int creationDisposition,
 			int flagsAndAttributes,
 			int templateFile);
+
+		#endregion
+
+		#region setupapi.dll
 
 		[DllImport("setupapi.dll", CharSet = CharSet.Auto, EntryPoint = "SetupDiGetDeviceInterfaceDetail")]
 		internal static extern bool SetupDiGetDeviceInterfaceDetailBuffer(
@@ -147,12 +174,6 @@ namespace FastHidWrapper
 			int deviceInterfaceDetailDataSize,
 			ref int requiredSize,
 			IntPtr deviceInfoData);
-
-		[DllImport("hid.dll")]
-		internal static extern bool HidD_GetAttributes(IntPtr hidDeviceObject, ref HidAttributes attributes);
-
-		[DllImport("hid.dll")]
-		internal static extern void HidD_GetHidGuid(ref Guid hidGuid);
 
 		[DllImport("setupapi.dll")]
 		internal static extern bool SetupDiEnumDeviceInterfaces(
@@ -177,6 +198,8 @@ namespace FastHidWrapper
 
 		[DllImport("setupapi.dll")]
 		internal static extern int SetupDiDestroyDeviceInfoList(IntPtr deviceInfoSet);
+
+		#endregion
 
 		#endregion
 	}
