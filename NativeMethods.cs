@@ -12,11 +12,13 @@ namespace FastHidWrapper
 	internal static class NativeMethods
 	{
 		#region Constants
-
+		
+		internal const uint AccessNone = 0x0;
+		internal const uint AccessRead = 0x80000000;
+		internal const uint AccessWrite = 0x40000000;
 		internal const int FileFlagOverlapped = 0x40000000;
 		internal const short FileShareRead = 0x1;
 		internal const short FileShareReadWrite = 0x3;
-		internal const int AccessNone = 0x0;
 		internal const short OpenExisting = 0x3;
 
 		#endregion
@@ -152,6 +154,14 @@ namespace FastHidWrapper
 			int creationDisposition,
 			int flagsAndAttributes,
 			int templateFile);
+
+		[DllImport("kernel32.dll")]
+		internal static extern bool WriteFile(
+			IntPtr hFile,
+			byte[] lpBuffer,
+			uint nNumberOfBytesToWrite,
+			out uint lpNumberOfBytesWritten,
+			[In] ref System.Threading.NativeOverlapped lpOverlapped);
 
 		#endregion
 

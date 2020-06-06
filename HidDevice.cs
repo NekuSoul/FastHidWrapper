@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using static FastHidWrapper.NativeMethods;
 
 namespace FastHidWrapper
@@ -9,7 +10,9 @@ namespace FastHidWrapper
 	{
 		private HidAttributes _hidAttributes;
 		private HidCapabilities _hidCapabilities;
-		private IntPtr _hidDeviceObject;
+		private readonly IntPtr _hidDeviceObject;
+		private IntPtr _hidDeviceReadObject;
+		private IntPtr _hidDeviceWriteObject;
 
 		public int VendorId => _hidAttributes.VendorID;
 		public int ProductId => _hidAttributes.ProductID;
@@ -21,12 +24,12 @@ namespace FastHidWrapper
 		internal HidDevice(string path)
 		{
 			Path = path;
-			OpenDevice();
+			_hidDeviceObject = OpenDevice(AccessNone);
 			QueryAttributes();
 			QueryCapabilities();
 		}
 
-		private void OpenDevice()
+		private IntPtr OpenDevice(uint access)
 		{
 			var security = new SecurityAttributes
 			{
@@ -35,13 +38,13 @@ namespace FastHidWrapper
 			};
 			security.Size = Marshal.SizeOf(security);
 
-			_hidDeviceObject = CreateFile(
+			return CreateFile(
 				Path,
-				AccessNone,
-				FileShareRead,
+				access,
+				FileShareReadWrite,
 				ref security,
 				OpenExisting,
-				FileFlagOverlapped,
+				0,
 				0);
 		}
 
@@ -75,6 +78,18 @@ namespace FastHidWrapper
 
 		public void Write(byte[] data)
 		{
+			if (_hidDeviceReadObject == default)
+				_hidDeviceReadObject = OpenDevice(AccessRead);
+
+			if (_hidDeviceWriteObject == default)
+				_hidDeviceWriteObject = OpenDevice(AccessWrite);
+
+			var dataBuffer = new byte[_hidCapabilities.OutputReportByteLength];
+			Array.Copy(data, dataBuffer, data.Length);
+
+			var nativeOverlapped = new NativeOverlapped();
+			bool result = WriteFile(_hidDeviceWriteObject, dataBuffer, (uint)dataBuffer.Length, out var written, ref nativeOverlapped);
+			var lastWin32Error = Marshal.GetLastWin32Error();
 		}
 	}
 }
