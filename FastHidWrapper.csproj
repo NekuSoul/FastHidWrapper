@@ -2,6 +2,31 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <RepositoryUrl>https://github.com/NekuSoul/FastHidWrapper</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>True</IncludeSymbols>
+    <PackageProjectUrl>https://github.com/NekuSoul/FastHidWrapper</PackageProjectUrl>
+    <Copyright>Copyright (c) 2023 NekuSoul &lt;git@nekusoul.de&gt;</Copyright>
+    <Description>.NET library for sending data to HID devices on Windows</Description>
+    <Company></Company>
+    <Authors>NekuSoul &lt;git@nekusoul.de&gt;</Authors>
+    <Version>1.1.0</Version>
+    <Title>FastHidWrapper</Title>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
