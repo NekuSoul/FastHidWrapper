@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-// ReSharper disable FieldCanBeMadeReadOnly.Global
-// ReSharper disable FieldCanBeMadeReadOnly.Local
-// ReSharper disable InconsistentNaming
-// ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable UnusedMember.Global
-
 namespace FastHidWrapper
 {
 	internal static class NativeMethods
@@ -28,11 +22,11 @@ namespace FastHidWrapper
 		[Flags]
 		internal enum DiGetClassFlags
 		{
-			DIGCF_DEFAULT = 0x01,
-			DIGCF_PRESENT = 0x02,
-			DIGCF_ALLCLASSES = 0x04,
-			DIGCF_PROFILE = 0x08,
-			DIGCF_DEVICEINTERFACE = 0x10,
+			Default = 0x01,
+			Present = 0x02,
+			AllClasses = 0x04,
+			Profile = 0x08,
+			DeviceInterface = 0x10,
 		}
 
 		#endregion

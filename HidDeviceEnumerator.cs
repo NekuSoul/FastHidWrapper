@@ -21,7 +21,7 @@ namespace FastHidWrapper
 				ref _hidGuid,
 				null,
 				0,
-				DiGetClassFlags.DIGCF_PRESENT | DiGetClassFlags.DIGCF_DEVICEINTERFACE);
+				DiGetClassFlags.Present | DiGetClassFlags.DeviceInterface);
 
 			var deviceInfos = EnumerateDeviceInfo(deviceInfoSet);
 
